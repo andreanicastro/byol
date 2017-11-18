@@ -24,6 +24,95 @@ void add_history(char* unused){}
 #include <editline/history.h>
 #endif
 
+enum { LVAL_NUM, LVAL_ERR };
+enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
+
+typedef struct {
+    int type;
+    long num;
+    int err;
+} lval;
+
+lval lval_num(long x)
+{
+    lval v;
+    v.type = LVAL_NUM;
+    v.num = x;
+    return v;
+}
+
+lval lval_err(int x)
+{
+    lval v;
+    v.type = LVAL_ERR;
+    v.err = x;
+    return v;
+}
+
+
+void lval_print(lval v)
+{
+    switch (v.type){
+        case LVAL_NUM : printf("%li", v.num); break;
+        case LVAL_ERR:
+             if (v.err == LERR_DIV_ZERO)
+                 printf("ERROR: Division by zero!");
+             if (v.err == LERR_BAD_OP)
+                 printf("ERROR: Invalid Operator!");
+             if (v.err == LERR_BAD_NUM)
+                 printf("ERROR: Invalid Number!");
+             break;
+    }
+}
+
+void lval_println(lval v) { lval_print(v); putchar('\n'); }
+
+
+lval eval_op(lval x, char* op, lval y)
+{
+    if (x.type == LVAL_ERR) { return x;}
+    if (y.type == LVAL_ERR) { return y;}
+
+    if (strcmp(op, "+") == 0 ) { return lval_num(x.num + y.num); }
+    if (strcmp(op, "-") == 0 ) { return lval_num(x.num - y.num); }
+    if (strcmp(op, "*") == 0 ) { return lval_num(x.num * y.num); }
+    if (strcmp(op, "/") == 0 )
+    {
+        return y.num == 0 
+            ? lval_err(LERR_DIV_ZERO)
+            : lval_num(x.num / y.num);
+    }
+    return lval_err(LERR_BAD_OP);
+} 
+
+lval eval(mpc_ast_t* t)
+{
+    // if tagged as number return it directly 
+    if (strstr(t->tag, "number"))
+    {
+        errno = 0;
+        long x = strtol(t->contents, NULL, 10);
+        return errno != ERANGE ? lval_num(x) : lval_err(LERR_BAD_NUM);
+    }
+
+    // the operator is always the second child 
+    char* op = t->children[1]->contents;
+
+    //we store the third child in `x`
+    lval x = eval(t->children[2]);
+
+    // iterate the remaining childre and combining
+    int i = 3;
+    while (strstr(t->children[i]->tag, "expr"))
+    {
+        x  = eval_op(x, op, eval(t->children[i]));
+        i++;
+    }
+    return x;
+}
+
+
+
 int main(int argc, char** argv)
 {
 
@@ -37,7 +126,7 @@ int main(int argc, char** argv)
     mpca_lang(MPCA_LANG_DEFAULT,
             "\
              number : /-?[0-9]+/ ; \
-             operator: '+' | '-' | '*' | '/' : \
+             operator: '+' | '-' | '*' | '/' ; \
              expr : <number> | '(' <operator> <expr>+ ')' ; \
              lispy : /^/ <operator> <expr>+ /$/ ; \
              ",
@@ -55,8 +144,20 @@ int main(int argc, char** argv)
         char* input = readline("lispy> ");
 
         add_history(input);
-
-        printf("no you're a %s\n", input);
+        
+        // parse the input
+        mpc_result_t r;
+        if (mpc_parse("<stdin>", input, Lispy, &r))
+        {
+            lval result = eval(r.output);
+            lval_println(result);
+            mpc_ast_delete(r.output);
+        }
+        else
+        {
+            mpc_err_print(r.error);
+            mpc_err_delete(r.error);
+        }
 
         free(input);
 
