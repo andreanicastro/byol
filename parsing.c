@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "mpc.h"
 #include "lval_ops.h"
+#include "lenv.h"
 
 #ifdef _WIN32
 #include <string.h>
@@ -32,15 +33,6 @@ void add_history(char* unused){}
         return err;}
 
 
-struct lenv;
-typedef struct lenv lenv;
-
-struct lenv 
-{
-    int count;
-    char** syms;
-    lval** vals;
-};
 
 lenv* lenv_new(void)
 {
