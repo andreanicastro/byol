@@ -1,5 +1,6 @@
 #include "builtins.h"
 #include "lval_ops.h"
+#include "lenv_ops.h"
 
 lval* builtin_op(lenv* e, lval* a, char* op)
 {
