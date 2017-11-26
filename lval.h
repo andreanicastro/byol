@@ -13,6 +13,7 @@ enum { LVAL_NUM, LVAL_ERR, LVAL_SYM,
 
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
 
+char* ltype_name(int t);
 
 typedef lval*(*lbuiltin)(lenv*, lval*);
 
@@ -34,7 +35,7 @@ lval* lval_fun(lbuiltin func);
 
 lval* lval_num(long x);
 
-lval* lval_err(char* m);
+lval* lval_err(char* fmt, ...);
 
 lval* lval_sym(char* s);
 

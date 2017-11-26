@@ -1,4 +1,20 @@
 #include "lval.h"
+#include <stdlib.h>
+
+char* ltype_name(int t)
+{
+    switch(t) 
+    {
+        case LVAL_FUN: return "Function";
+        case LVAL_NUM: return "Number";
+        case LVAL_ERR: return "Error";
+        case LVAL_SYM: return "Symbol";
+        case LVAL_SEXPR: return "S-Expression";
+        case LVAL_QEXPR: return "Q-Expression";
+        default: return "Unknown";
+    }
+}
+
 
 
 lval* lval_fun(lbuiltin func)
@@ -19,12 +35,24 @@ lval* lval_num(long x)
 }
 
 
-lval* lval_err(char* m)
+lval* lval_err(char* fmt, ...)
 {
     lval* v = malloc(sizeof(lval));
     v->type = LVAL_ERR;
-    v->err = malloc(strlen(m) + 1);
-    strcpy(v->err, m);
+   
+    /* Create a va list and initialize it*/
+    va_list va;
+    va_start(va, fmt);
+
+    /* Allocate 512 bytes of space */
+    v->err = malloc(512);
+
+    /* printf the error string with a maximum of 511 chars */
+    vsnprintf(v->err, 511, fmt, va);
+
+    /* cleanup out va list */
+    va_end(va);
+
     return v;
 }
 
