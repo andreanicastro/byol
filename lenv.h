@@ -1,7 +1,9 @@
 #ifndef LENV_H
 #define LENV_H
 
-#include "lval.h"
+
+struct lval;
+typedef struct lval lval;
 
 struct lenv;
 typedef struct lenv lenv;
