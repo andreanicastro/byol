@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpc.h"
-#include "lval.h"
+#include "lval_ops.h"
 
 #ifdef _WIN32
 #include <string.h>
